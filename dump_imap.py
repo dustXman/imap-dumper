@@ -56,8 +56,6 @@ def process(mail, folder):
     if rv != 'OK':
         raise FileNotFoundError('No messages found!', folder)
 
-    print(Fore.BLUE + str(len(data[0])) + ' messages found!')
-
     if not os.path.isdir(args.local_folder):
         raise NotADirectoryError('Local folder not found.')
 
@@ -78,14 +76,16 @@ def process(mail, folder):
         date = ''
 
         try:
-            header = email.header.make_header(email.header.decode_header(msg['Subject']))
+            header = email.header.make_header(
+                email.header.decode_header(msg['Subject']))
 
             subject = str(header)
 
             date_tuple = email.utils.parsedate_tz(msg['Date'])
 
             if date_tuple:
-                datetime_ = datetime.fromtimestamp(email.utils.mktime_tz(date_tuple))
+                datetime_ = datetime.fromtimestamp(
+                    email.utils.mktime_tz(date_tuple))
 
                 date = datetime_.strftime('%Y-%m-%d %H:%M:%S') + ' - '
         except:
@@ -94,7 +94,8 @@ def process(mail, folder):
         subject = re.sub(r'(\n|\r|\r\n|\")', '', subject)
         subject = re.sub(r'/', '-', subject).strip()
 
-        file = date + re.sub(r'(\<|\>|\$)', '', msg['Message-ID']) + ' - ' + subject
+        file = date + re.sub(r'(\<|\>|\$)', '',
+                             msg['Message-ID']) + ' - ' + subject
 
         print(Fore.BLUE + '\tWriting message at "' + file + '"... ', end='')
 
@@ -106,7 +107,8 @@ def process(mail, folder):
         with open('{}/{}.eml'.format(final_dir, file), 'wb') as f:
             f.write(data[0][1])
 
-        print(Fore.GREEN + 'Done.', end='' if args.delete_remote is not None else '\n')
+        print(Fore.GREEN + 'Done.',
+              end='' if args.delete_remote is not None else '\n')
 
         if args.delete_remote is not None:
             delete(mail, num)
@@ -145,7 +147,7 @@ def main():
         remote_folders_map = []
 
         for remote_folder in remote_folders:
-            remote_folder = remote_folder.decode().split(' "." ')[1]
+            remote_folder = remote_folder.decode().split(" ")[-1]
 
             remote_folders_map.append({
                 'original': remote_folder,
@@ -158,15 +160,22 @@ def main():
             return
 
         if args.remote_folder != '*':
-            args.remote_folder = list(map(lambda x: x.strip(), str(args.remote_folder).lower().split(',')))
+            args.remote_folder = list(
+                map(lambda x: x.strip(), str(args.remote_folder).lower().split(',')))
 
-            diff = list(set(args.remote_folder) - set(list(map(lambda x: x['lower'], remote_folders_map))))
+            diff = list(set(args.remote_folder) -
+                        set(list(map(lambda x: x['lower'], remote_folders_map))))
 
             if len(diff) > 0:
-                raise AttributeError('Remote folders not found: ' + ', '.join(diff))
+                raise AttributeError(
+                    'Remote folders not found: ' + ', '.join(diff))
+
+        else:
+            args.remote_folder = [f['lower'] for f in remote_folders_map]
 
         for folder in args.remote_folder:
-            folder = [f for f in remote_folders_map if f['lower'] == folder][0]['original']
+            folder = [f for f in remote_folders_map if f['lower']
+                      == folder][0]['original']
 
             rv, data = mail.select(folder)
 
@@ -179,7 +188,8 @@ def main():
             else:
                 raise ConnectionError('Unable to open mailbox.', folder, rv)
     except BaseException as e:
-        print(Back.RED + Fore.BLACK + '[ERROR]' + Style.RESET_ALL, Fore.RED + type(e).__name__, str(e.args))
+        print(Back.RED + Fore.BLACK +
+              '[ERROR]' + Style.RESET_ALL, Fore.RED + type(e).__name__, str(e.args))
     finally:
         mail.logout()
 
