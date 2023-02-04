@@ -51,7 +51,7 @@ def fetch_uid(mail, num):
 
 
 def process(mail, folder):
-    rv, data = mail.search(None, 'ALL')
+    rv, data_search = mail.search(None, 'ALL')
 
     if rv != 'OK':
         raise FileNotFoundError('No messages found!', folder)
@@ -59,7 +59,7 @@ def process(mail, folder):
     if not os.path.isdir(args.local_folder):
         raise NotADirectoryError('Local folder not found.')
 
-    for num in data[0].split():
+    for num in data_search[0].split()[::-1]:
         output_dir = os.path.abspath(args.local_folder)
 
         rv, data = fetch_message(mail, num)
@@ -74,6 +74,7 @@ def process(mail, folder):
 
         subject = 'No subject'
         date = ''
+        is_too_old = False
 
         try:
             header = email.header.make_header(
@@ -87,15 +88,17 @@ def process(mail, folder):
                 datetime_ = datetime.fromtimestamp(
                     email.utils.mktime_tz(date_tuple))
 
-                date = datetime_.strftime('%Y-%m-%d %H:%M:%S') + ' - '
+                date = datetime_.strftime('%Y-%m-%d_%H:%M:%S')
+
+                if (datetime.now() - datetime_).days > 365:
+                    is_too_old = True
         except:
             pass
 
         subject = re.sub(r'(\n|\r|\r\n|\")', '', subject)
-        subject = re.sub(r'/', '-', subject).strip()
+        subject = re.sub(r'/|\s', '-', subject).strip()
 
-        file = date + re.sub(r'(\<|\>|\$)', '',
-                             msg['Message-ID']) + ' - ' + subject
+        file = date + '_' + subject
 
         print(Fore.BLUE + '\tWriting message at "' + file + '"... ', end='')
 
@@ -110,7 +113,7 @@ def process(mail, folder):
         print(Fore.GREEN + 'Done.',
               end='' if args.delete_remote is not None else '\n')
 
-        if args.delete_remote is not None:
+        if args.delete_remote is not None and is_too_old:
             delete(mail, num)
 
 
