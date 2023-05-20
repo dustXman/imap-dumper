@@ -88,14 +88,14 @@ def process(mail, folder):
                 datetime_ = datetime.fromtimestamp(
                     email.utils.mktime_tz(date_tuple))
 
-                date = datetime_.strftime('%Y-%m-%d_%H:%M:%S')
+                date = datetime_.strftime('%Y-%m-%d_%H-%M-%S')
 
                 if (datetime.now() - datetime_).days > 365:
                     is_too_old = True
         except:
             pass
 
-        subject = re.sub(r'(\n|\r|\r\n|\")', '', subject)
+        subject=re.sub('[^\w\-_\. \n\r\"]', '', subject)
         subject = re.sub(r'/|\s', '-', subject).strip()
 
         file = date + '_' + subject
